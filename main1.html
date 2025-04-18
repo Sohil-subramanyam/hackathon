@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Visionary - Image Editor</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #444;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      max-width: 100%;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .toolbar button, .toolbar input {
+      padding: 10px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    input[type="file"] {
+      background-color: #2196F3;
+      color: white;
+    }
+    input[type="range"] {
+      width: 100px;
+    }
+    .auth {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .auth input {
+      padding: 8px;
+      margin: 5px;
+      width: 200px;
+    }
+    .auth-toggle {
+      cursor: pointer;
+      color: #007BFF;
+      text-decoration: underline;
+    }
+    .hidden {
+      display: none;
+    }
+    .dark-mode {
+      background-color: #121212;
+      color: #f0f0f0;
+    }
+    .dark-mode .container {
+      background-color: #1e1e1e;
+    }
+    .dark-mode button {
+      background-color: #555;
+    }
+    .dark-mode input[type="file"] {
+      background-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" id="auth-container">
+  <div class="auth" id="login-form">
+    <h2>Login</h2>
+    <input type="text" placeholder="Username" id="login-username"><br>
+    <input type="password" placeholder="Password" id="login-password"><br>
+    <button onclick="login()">Login</button>
+    <p>Don't have an account? <span class="auth-toggle" onclick="toggleAuth('signup')">Sign up</span></p>
+  </div>
+
+  <div class="auth hidden" id="signup-form">
+    <h2>Sign Up</h2>
+    <input type="text" placeholder="Username" id="signup-username"><br>
+    <input type="password" placeholder="Password" id="signup-password"><br>
+    <button onclick="signup()">Sign Up</button>
+    <p>Already have an account? <span class="auth-toggle" onclick="toggleAuth('login')">Login</span></p>
+  </div>
+</div>
+
+<div class="container hidden" id="app-container">
+  <h1>Visionary - Image Editor</h1>
+  <div class="toolbar">
+    <input type="file" id="upload" accept="image/*">
+    <button onclick="resizeImage()">Resize</button>
+    <button onclick="rotateImage()">Rotate</button>
+    <button onclick="flipImage()">Flip</button>
+    <label>Brightness<input type="range" min="0" max="200" value="100" id="brightness" onchange="applyFilters()"></label>
+    <label>Contrast<input type="range" min="0" max="200" value="100" id="contrast" onchange="applyFilters()"></label>
+    <button onclick="grayscale()">Grayscale</button>
+    <button onclick="sepia()">Sepia</button>
+    <button onclick="reset()">Reset</button>
+    <button onclick="undo()">Undo</button>
+    <button onclick="redo()">Redo</button>
+    <button onclick="download()">Download</button>
+    <button onclick="toggleDarkMode()">Dark Mode</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <canvas id="canvas" width="600" height="400"></canvas>
+</div>
+
+<script>
+  let canvas = document.getElementById("canvas");
+  let ctx = canvas.getContext("2d");
+  let originalImage = null;
+  let currentImage = null;
+  let history = [];
+  let redoStack = [];
+
+  document.getElementById("upload").addEventListener("change", (e) => {
+    let file = e.target.files[0];
+    if (!file) return;
+    let reader = new FileReader();
+    reader.onload = () => {
+      let img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        originalImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        saveState();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function resizeImage() {
+    let newWidth = prompt("New width:", canvas.width);
+    let newHeight = prompt("New height:", canvas.height);
+    if (newWidth && newHeight) {
+      let tempCanvas = document.createElement("canvas");
+      tempCanvas.width = newWidth;
+      tempCanvas.height = newHeight;
+      tempCanvas.getContext("2d").drawImage(canvas, 0, 0, newWidth, newHeight);
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      ctx.drawImage(tempCanvas, 0, 0);
+      saveState();
+    }
+  }
+
+  function rotateImage() {
+    let tempCanvas = document.createElement("canvas");
+    tempCanvas.width = canvas.height;
+    tempCanvas.height = canvas.width;
+    let tempCtx = tempCanvas.getContext("2d");
+    tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+    tempCtx.rotate(Math.PI / 2);
+    tempCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+    canvas.width = tempCanvas.width;
+    canvas.height = tempCanvas.height;
+    ctx.drawImage(tempCanvas, 0, 0);
+    saveState();
+  }
+
+  function flipImage() {
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(canvas, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    saveState();
+  }
+
+  function grayscale() {
+    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      let avg = (imgData.data[i] + imgData.data[i+1] + imgData.data[i+2]) / 3;
+      imgData.data[i] = imgData.data[i+1] = imgData.data[i+2] = avg;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    saveState();
+  }
+
+  function sepia() {
+    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      let r = imgData.data[i], g = imgData.data[i+1], b = imgData.data[i+2];
+      imgData.data[i] = (r * .393) + (g *.769) + (b * .189);
+      imgData.data[i+1] = (r * .349) + (g *.686) + (b * .168);
+      imgData.data[i+2] = (r * .272) + (g *.534) + (b * .131);
+    }
+    ctx.putImageData(imgData, 0, 0);
+    saveState();
+  }
+
+  function applyFilters() {
+    if (!originalImage) return;
+    let bright = document.getElementById("brightness").value / 100;
+    let contrast = document.getElementById("contrast").value / 100;
+    let imgData = new ImageData(new Uint8ClampedArray(originalImage.data), originalImage.width, originalImage.height);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      for (let j = 0; j < 3; j++) {
+        let val = imgData.data[i + j];
+        val = ((val - 128) * contrast + 128) * bright;
+        imgData.data[i + j] = Math.min(255, Math.max(0, val));
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    saveState();
+  }
+
+  function reset() {
+    if (originalImage) {
+      ctx.putImageData(originalImage, 0, 0);
+      saveState();
+    }
+  }
+
+  function undo() {
+    if (history.length > 1) {
+      redoStack.push(history.pop());
+      let previous = history[history.length - 1];
+      ctx.putImageData(previous, 0, 0);
+    }
+  }
+
+  function redo() {
+    if (redoStack.length > 0) {
+      let next = redoStack.pop();
+      ctx.putImageData(next, 0, 0);
+      history.push(next);
+    }
+  }
+
+  function download() {
+    let link = document.createElement('a');
+    link.download = 'edited_image.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  }
+
+  function saveState() {
+    history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    redoStack = [];
+  }
+
+  // Auth Logic
+  function toggleAuth(mode) {
+    document.getElementById("login-form").classList.toggle("hidden", mode === "signup");
+    document.getElementById("signup-form").classList.toggle("hidden", mode === "login");
+  }
+
+  function login() {
+    document.getElementById("auth-container").classList.add("hidden");
+    document.getElementById("app-container").classList.remove("hidden");
+  }
+
+  function signup() {
+    document.getElementById("auth-container").classList.add("hidden");
+    document.getElementById("app-container").classList.remove("hidden");
+  }
+
+  function logout() {
+    document.getElementById("auth-container").classList.remove("hidden");
+    document.getElementById("app-container").classList.add("hidden");
+  }
+
+  function toggleDarkMode() {
+    document.body.classList.toggle("dark-mode");
+  }
+</script>
+</body>
+</html>
