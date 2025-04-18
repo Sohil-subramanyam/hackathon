@@ -1,0 +1,169 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.container {
+    max-width: 960px;
+    margin: 20px auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+header {
+    text-align: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+main {
+    display: flex;
+    gap: 20px;
+}
+
+#upload-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+}
+
+#image-upload {
+    display: none;
+}
+
+.upload-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+.upload-button:hover {
+    background-color: #0056b3;
+}
+
+#image-preview-container {
+    max-width: 100%;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#uploaded-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+#tools {
+    flex: 1;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.tool-group {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.tool-group h3 {
+    margin-top: 0;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.slider-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.slider-control label {
+    width: 80px;
+    text-align: right;
+}
+
+.dropdown-control label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="range"],
+input[type="number"],
+select,
+button {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button {
+    cursor: pointer;
+    background-color: #eee;
+}
+
+button:hover {
+    background-color: #ddd;
+}
+
+.resize-controls,
+.rotate-controls,
+.crop-controls,
+.flip-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.resize-controls label,
+.rotate-controls label {
+    width: auto;
+}
+
+footer {
+    text-align: center;
+    padding-top: 20px;
+    color: #777;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #333;
+    color: #f4f4f4;
+}
+
+.container.dark-mode {
+    background-color: #222;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+header.dark-mode {
+    border-bottom-color: #555;
+}
+
+#tools.dark-mode,
+#upload-preview.dark-mode {
+    border-color: #555;
+}
+
+/* Add more dark mode styles for other elements as needed */
